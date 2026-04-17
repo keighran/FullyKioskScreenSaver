@@ -3,118 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive Clock and Date</title>
+    <title>Nepali Patro Clock - A.D. & B.S.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Noto+Sans+Devanagari:wght@100..900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #000000;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --accent: #ffdd00;
+        }
+
         body {
-            background-color: black;
-            color: white;
-            font-family: "Outfit", sans-serif;
-            font-optical-sizing: auto;
-            font-style: normal;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: "Outfit", "Noto Sans Devanagari", sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-        }
-        .clock {
-            font-size: 15vw; /* Font size scales with viewport width */
-            margin-bottom: 0rem;
-            font-weight: 600;
-        }
-        .date {
-            font-size: 4vw; /* Font size scales with viewport width */
-            font-weight: 600;
+            overflow: hidden;
+            text-align: center;
         }
 
-        .wlr {
-            font-family: "Outfit", sans-serif!important;
-            font-optical-sizing: auto;
-            font-style: normal;
-            font-weight: 600;
-            position: absolute;
-            top: 15px;
-            right: 20px;
+        .clock {
+            font-size: 18vw;
+            line-height: 1;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            letter-spacing: -2px;
+            transition: margin 0.5s ease-in-out;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+        }
+
+        .ampm {
+            font-size: 0.35em;
+            margin-left: 1vw;
+            font-weight: 400;
+            opacity: 0.8;
+            letter-spacing: 0;
+        }
+
+        .date-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .date-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* English Date Styling (Now on Top) */
+        .date-ad {
+            font-size: 3vw;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            margin-bottom: 0.2rem;
+        }
+
+        /* Nepali Date Styling (Now on Bottom) */
+        .date-bs {
+            font-size: 4.5vw;
+            font-weight: 500;
+            font-family: "Noto Sans Devanagari", sans-serif;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .clock { font-size: 25vw; }
+            .date-ad { font-size: 5vw; }
+            .date-bs { font-size: 8vw; }
         }
     </style>
 </head>
 <body>
-    <!-- Visit This URL https://sharpweather.com/widget/r/#c=cbkg=rgb(69,90,100)&c=codd=rgb(84,110,122) and edit your Weather Widget. Else, if you don't want it, delete or comment out this weather block. -->
 
-    <!-- Weather block Starts 
-    <div id="id4167f8d5860c6" a='{"t":"r","v":"1.2","lang":"en","locs":[462],"ssot":"c","sics":"ms","cbkg":"#FFFFFF00","cfnt":"rgba(255,255,255,1)","codd":"#FFFFFF00","cont":"rgba(255,255,255,0.8313725490196079)","stof":"5"}'>Weather Data Source: <a href="https://sharpweather.com/weather_zagreb/30_days/">weather Zagreb 30 days</a></div><script async src="https://static1.sharpweather.com/widgetjs/?id=id4167f8d5860c6"></script>
-    Weather block Ends -->
-
-
-    <div class="clock" id="clock"></div>
-    <div class="date" id="date"></div>
+    <div class="clock" id="clock">
+        <span id="time-digits">00:00</span>
+        <span class="ampm" id="ampm">AM</span>
+    </div>
+    
+    <div class="date-container">
+        <!-- English Date First -->
+        <div class="date-row">
+            <div class="date-ad" id="date-ad"></div>
+        </div>
+        <!-- Nepali Date Second -->
+        <div class="date-row">
+            <div class="date-bs" id="date-bs"></div>
+        </div>
+    </div>
 
     <script>
-        function updateTime() {
+        // Nepali Calendar Data (Bikram Sambat)
+        const bsData = {
+            2080: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
+            2081: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
+            2082: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
+            2083: [31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
+            2084: [31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
+            2085: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
+            2086: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
+            2087: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 30, 30],
+            2088: [31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
+            2089: [31, 31, 32, 31, 31, 31, 30, 29, 30, 30, 30, 30],
+            2090: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30]
+        };
+
+        const bsMonths = ['वैशाख', 'जेठ', 'असार', 'साउन', 'भदौ', 'असोज', 'कात्तिक', 'मंसिर', 'पुस', 'माघ', 'फागुन', 'चैत'];
+        const bsDays = ['आइतवार', 'सोमवार', 'मङ्गलवार', 'बुधवार', 'बिहिवार', 'शुक्रवार', 'शनिवार'];
+        
+        const adMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const adDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        function toNpNum(num) {
+            const map = {'0':'०','1':'१','2':'२','3':'३','4':'४','5':'५','6':'६','7':'७','8':'८','9':'९'};
+            return String(num).replace(/[0-9]/g, d => map[d]);
+        }
+
+        const refAd = new Date("2023-04-14");
+        const refBsYear = 2080;
+
+        function getNepaliDate(now) {
+            let diffTime = now.getTime() - refAd.getTime();
+            let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            let currYear = refBsYear;
+            let currMonth = 0; 
+            let currDay = 1;
+
+            if (diffDays >= 0) {
+                while (diffDays > 0) {
+                    let daysInMonth = bsData[currYear][currMonth];
+                    if (diffDays >= daysInMonth) {
+                        diffDays -= daysInMonth;
+                        currMonth++;
+                        if (currMonth > 11) {
+                            currMonth = 0;
+                            currYear++;
+                        }
+                    } else {
+                        currDay += diffDays;
+                        diffDays = 0;
+                    }
+                }
+            }
+            
+            return {
+                year: currYear,
+                month: bsMonths[currMonth],
+                day: currDay,
+                dayName: bsDays[now.getDay()]
+            };
+        }
+
+        function update() {
             const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            //// Croatian
-            //const days = ['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'];
-            //// English
-             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            //// Spanish
-            // const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            //// French
-            // const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-            //// German
-            // const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-            //// Italian
-            // const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
-            //// Portuguese
-            // const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-            //// Dutch
-            // const days = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
-            //// Russian
-            // const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-            //// Chinese (Simplified)
-            // const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-            //// Japanese
-            // const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
-            //// Arabic
-            // const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-            //// Nepali
-            // const days = ['आइतवार', 'सोमवार', 'मङ्गलवार', 'बुधवार', 'बिहिवार', 'शुक्रवार', 'शनिवार'];
-            //// Greek
-            // const days = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
-            const day = days[now.getDay()];
-            const date = now.toLocaleDateString('de-DE');
+            
+            // 12-Hour Time Format
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12; 
+            const h = String(hours).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('time-digits').textContent = `${h}:${m}`;
+            document.getElementById('ampm').textContent = ampm;
 
-            document.getElementById('clock').textContent = `${hours}:${minutes}`;
-            document.getElementById('date').textContent = `${day}, ${date}`;
+            // Proper Nepali Date (B.S.)
+            const bs = getNepaliDate(now);
+            document.getElementById('date-bs').textContent = 
+                `${bs.dayName}, ${bs.month} ${toNpNum(bs.day)}, ${toNpNum(bs.year)} वि.सं.`;
+
+            // English Date (A.D.)
+            const dayEn = adDays[now.getDay()];
+            const monthEn = adMonths[now.getMonth()];
+            document.getElementById('date-ad').textContent = 
+                `${dayEn}, ${monthEn} ${now.getDate()}, ${now.getFullYear()} A.D.`;
         }
 
-        function toggleClockMargin() {
-            const clockElement = document.querySelector('.clock');
-            if (clockElement.style.marginBottom === '4rem') {
-                clockElement.style.marginBottom = '0rem';
-            } else {
-                clockElement.style.marginBottom = '4rem';
-            }
+        function shiftUI() {
+            const clock = document.getElementById('clock');
+            clock.style.marginTop = clock.style.marginTop === '10px' ? '0px' : '10px';
         }
 
-        function toggleWeatherPosition() {
-            const weatherElement = document.querySelector('.wlr');
-            if (weatherElement.style.top === '25px') {
-                weatherElement.style.top = '15px';
-            } else {
-                weatherElement.style.top = '25px';
-            }
-        }
-
-        setInterval(updateTime, 1000);
-        setInterval(toggleClockMargin, 5 * 60 * 1000); // Toggle margin every 5 minutes
-        // setInterval(toggleWeatherPosition, 5 * 60 * 1000); // Toggle margin every 5 minutes
-        updateTime(); // Initial call to display immediately
+        setInterval(update, 1000);
+        setInterval(shiftUI, 300000);
+        update();
     </script>
 </body>
 </html>
